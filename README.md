@@ -1,7 +1,10 @@
-webdev-contributors
-===================
+Civic Ninjas Butsudan
+=====================
 
-Code for discovering webdev contributors
+Discovering and showcasing civic ninjas.
+
+Forked from [Mozilla
+webdev-contributors](https://github.com/mozilla/webdev-contributors)
 
 Run it
 ------
