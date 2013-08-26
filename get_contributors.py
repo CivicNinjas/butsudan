@@ -9,6 +9,7 @@ import sqlite3
 import logging
 import json
 
+from repos import repos
 
 # Quick & dirty env-based config
 # See also: https://developer.github.com/v3/#rate-limiting
@@ -21,49 +22,6 @@ GITHUB_REPOS_CACHE_AGE = int(os.getenv('GITHUB_REPOS_CACHE_AGE',
 
 CACHE_PATH_TMPL = 'cache/%s/%s'
 
-repos = [
-    'codeforamerica/adopt-a-hydrant',
-    'codeforamerica/public_art_finder',
-    'codeforamerica/blightstatus',
-    'codeforamerica/schoolselection',
-    'codeforamerica/honolulu_answers',
-    'codeforamerica/nsb-mobile',
-    'codeforamerica/opencounter',
-    'codeforamerica/prepared.ly',
-    'codeforamerica/wheresmyschoolbus',
-    'codeforamerica/click_that_hood',
-    'codeforamerica/streetmix',
-    'codeforamerica/textizen',
-    'smartchicago/chicago-early-learning',
-    'smartchicago/chicago-atlas',
-    'smartchicago/wikichicago',
-    'smartchicago/TweetCollector',
-    'smartchicago/connect-chicago-locator',
-    'smartchicago/civic-innovation-summer',
-    'smartchicago/civic-user-testing',
-    'smartchicago/www.smartchicagoapps.org',
-    'smartchicago/foodborne',
-    'smartchicago/foodborne_classifier',
-    'smartchicago/wasmycartowed',
-    'smartchicago/tabula',
-    'smartchicago/cutgroup',
-    'smartchicago/adopt-a-sidewalk',
-    'smartchicago/cutgroup-signups',
-    'smartchicago/chicago-health-atlas',
-    'smartchicago/311-fm-webapp',
-    'smartchicago/311-fm-data',
-    'smartchicago/foodborne',
-    'LearnSprout/learnsprout.github.com',
-    'azavea/Open-Data-Catalog',
-    'openplans/shareabouts',
-    'open-city/vacant-building-finder',
-    'sheltr/sheltr',
-    'openplans/OpenTripPlanner',
-    'localwiki/localwiki',
-    'open-city/look-at-cook',
-    'memphis518/Garden-Dating-Service',
-    'okfn/ckan'
-]
 GITHUB_API_HOST = 'https://api.github.com'
 base_url = '%s/repos' % GITHUB_API_HOST
 commit_levels = [1000,500,250,100, 50, 25, 10, 1, 0]
