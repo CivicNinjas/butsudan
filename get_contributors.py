@@ -29,69 +29,85 @@ contributors = {}
 contributors_by_level = {}
 
 
+def add_repo_contributors(contributors, repo):
+    print "Fetching contributors for %s" % repo
+    repo_url = '%s/repos/%s' % (GITHUB_API_HOST, repo)
+
+    repocontributors = api_get('%s/contributors' % repo_url, None,
+                               'repocontributors', GITHUB_REPOS_CACHE_AGE)
+    # contributors responses with errors come back as dict, so skip them
+    if type(repocontributors) == dict:
+        return
+    for repocontributor in repocontributors:
+        username = repocontributor['login']
+        contributions = repocontributor['contributions']
+        contributor = contributors.setdefault(username, {
+            "username": username,
+            "name": None,
+            "email": None,
+            "location": None,
+            "public_repos": 0,
+            "followers": 0,
+            "hireable": True,
+            "company": None
+        })
+        contributor['contributions'] = (
+            contributor.get('contributions', 0) + contributions)
+        contributor.setdefault('repos', []).append(repo)
+        if not contributor['email']:
+            print "Fetching email for %s" % (username,)
+            commits = api_get('%s/commits' % repo_url,
+                              dict(author=username),
+                              'email', GITHUB_EMAIL_CACHE_AGE)
+            try:
+                first = commits[0]['commit']
+                contributor['email'] = first['author']['email']
+            except:
+                pass
+        print "Fetching location for %s" % (username,)
+        user = api_get('%s/users/%s' % (GITHUB_API_HOST, username),
+                       None, 'user', GITHUB_EMAIL_CACHE_AGE)
+        contributor['location'] = user.get('location', None)
+        contributor['name'] = user.get('name', None)
+        contributor['public_repos'] = user.get('public_repos', 0)
+        contributor['followers'] = user.get('followers', 0)
+        contributor['hireable'] = user.get('hireable', True)
+        contributor['company'] = user.get('company', None)
+
+    print "Fetching forkers of %s" % repo
+    forks = api_get('%s/forks' % repo_url, None, 'forks',
+                    GITHUB_REPOS_CACHE_AGE)
+    for fork in forks:
+        if type(fork) != dict:
+            import ipdb; ipdb.set_trace()
+        else:
+            username = fork['owner']['login']
+            contributor = contributors.setdefault(username, {
+                "username": username, "email": None
+            })
+            contributor.setdefault('repos', []).append(repo)
+            if not contributor['email']:
+                print "Fetching email for %s" % username
+                forker = api_get('%s/users/%s' % (GITHUB_API_HOST, username))
+                try:
+                    contributor['email'] = forker['email']
+                except:
+                    pass
+
+
 def main():
     # Figure out the number of contributions per contributor:
     for repo in repos:
-        print "Fetching contributors for %s" % repo
-        repo_url = '%s/repos/%s' % (GITHUB_API_HOST, repo)
+        # "repo" is an org, get all source repos under it
+        if repo[-1] == '/':
+            org_repos = api_get('%s/orgs/%srepos' % (GITHUB_API_HOST, repo),
+                                {'type': 'sources'}, 'org_repos',
+                                GITHUB_REPOS_CACHE_AGE)
+            for org_repo in org_repos:
+                add_repo_contributors(contributors, org_repo['full_name'])
 
-        repocontributors = api_get('%s/contributors' % repo_url, None,
-                                   'repocontributors', GITHUB_REPOS_CACHE_AGE)
-        for repocontributor in repocontributors:
-            username = repocontributor['login']
-            contributions = repocontributor['contributions']
-            contributor = contributors.setdefault(username, {
-                "username": username,
-                "name": None,
-                "email": None,
-                "location": None,
-                "public_repos": 0,
-                "followers": 0,
-                "hireable": True,
-                "company": None
-            })
-            contributor['contributions'] = (
-                contributor.get('contributions', 0) + contributions)
-            contributor.setdefault('repos', []).append(repo)
-            if not contributor['email']:
-                print "Fetching email for %s" % (username,)
-                commits = api_get('%s/commits' % repo_url,
-                                  dict(author=username),
-                                  'email', GITHUB_EMAIL_CACHE_AGE)
-                try:
-                    first = commits[0]['commit']
-                    contributor['email'] = first['author']['email']
-                except:
-                    pass
-            print "Fetching location for %s" % (username,)
-            user = api_get('%s/users/%s' % (GITHUB_API_HOST, username),
-                           None, 'user', GITHUB_EMAIL_CACHE_AGE)
-            contributor['location'] = user.get('location', None)
-            contributor['name'] = user.get('name', None)
-            contributor['public_repos'] = user.get('public_repos', 0)
-            contributor['followers'] = user.get('followers', 0)
-            contributor['hireable'] = user.get('hireable', True)
-            contributor['company'] = user.get('company', None)
-
-        print "Fetching forkers of %s" % repo
-        forks = api_get('%s/forks' % repo_url, None, 'forks',
-                        GITHUB_REPOS_CACHE_AGE)
-        for fork in forks:
-            if type(fork) != dict:
-                import ipdb; ipdb.set_trace()
-            else:
-                username = fork['owner']['login']
-                contributor = contributors.setdefault(username, {
-                    "username": username, "email": None
-                })
-                contributor.setdefault('repos', []).append(repo)
-                if not contributor['email']:
-                    print "Fetching email for %s" % username
-                    forker = api_get('%s/users/%s' % (GITHUB_API_HOST, username))
-                    try:
-                        contributor['email'] = forker['email']
-                    except:
-                        pass
+        else:
+            add_repo_contributors(contributors, repo)
 
 
     # Group the contributors into levels by number of contributions:
