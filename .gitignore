@@ -39,3 +39,6 @@ nosetests.xml
 
 # cache
 cache
+
+# README
+README.html
